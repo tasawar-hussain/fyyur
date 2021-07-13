@@ -1,18 +1,17 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-
 import json
 import logging
 from logging import FileHandler, Formatter
 
-import dateutil.parser
 import babel
+import dateutil.parser
 from flask import (Flask, Response, flash, redirect, render_template, request,
                    url_for)
+from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
 
 from forms import *
 
@@ -21,17 +20,16 @@ from forms import *
 #----------------------------------------------------------------------------#
 
 app = Flask(__name__)
-moment = Moment(app)
 app.config.from_object('config')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
+moment = Moment(app)
 
 
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-
-
 class Venue(db.Model):
     __tablename__ = 'Venue'
 
@@ -62,6 +60,7 @@ class Artist(db.Model):
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+
 
 #----------------------------------------------------------------------------#
 # Filters.
