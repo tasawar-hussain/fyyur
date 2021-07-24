@@ -3,6 +3,7 @@
 #----------------------------------------------------------------------------#
 import json
 import logging
+import sys
 from logging import FileHandler, Formatter
 
 import babel
@@ -236,15 +237,27 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
-
-    # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template('pages/home.html')
+    form = VenueForm(request.form)
+    try:
+        if form.validate():
+            form_data = form.data
+            del form_data['csrf_token']
+            venue = Venue(**form_data)
+            db.session.add(venue)
+            db.session.commit()
+            flash("Venue was successfully created!")
+        else:
+            print("errors: ", form.errors)
+            flash("Form validation failed .Venue could not be created")
+            return render_template('forms/new_venue.html', form=form)
+    except():
+        db.session.rollback()
+        print(sys.exc_info())
+        flash('An error occurred. Venue could not be created.')
+        return render_template('forms/new_venue.html', form=form)
+    finally:
+        db.session.close()
+    return redirect(url_for('venues'))
 
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -368,7 +381,7 @@ def show_artist(artist_id):
         "upcoming_shows_count": 3,
     }
     data = list(filter(lambda d: d['id'] ==
-                artist_id, [data1, data2, data3]))[0]
+                       artist_id, [data1, data2, data3]))[0]
     return render_template('pages/show_artist.html', artist=data)
 
 #  Update
