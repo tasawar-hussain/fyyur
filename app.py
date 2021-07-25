@@ -86,8 +86,6 @@ def search_venues():
     """
     implement case-insensitive search on venues with partial string search.
     """
-    # import pdb
-    # pdb.set_trace()
     query = request.form['search_term']
     result = Venue.query.filter(Venue.name.ilike(
         f"%{query}%")).options(load_only("name", "id")).all()
