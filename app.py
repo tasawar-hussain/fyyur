@@ -192,8 +192,9 @@ def edit_venue_submission(venue_id):
         if form.validate():
             form_data = form.data
             del form_data['csrf_token']
-            venue = Venue.query.filter_by(id=venue_id)
-            if not venue:
+            venue = db.session.query(Venue).filter_by(id=venue_id)
+
+            if not venue.first():
                 abort(404)
             venue.update(form_data)
 
