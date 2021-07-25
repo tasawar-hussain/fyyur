@@ -13,6 +13,7 @@ from flask import (abort, Flask, Response, flash, redirect, render_template, req
 from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import load_only
 
 from forms import *
 from models import *
@@ -60,7 +61,8 @@ def index():
 
 @app.route('/venues')
 def venues():
-    venues = Venue.query.order_by("city").all()
+    venues = Venue.query.order_by("city").options(
+        load_only("name", "id", "city", "state")).all()
 
     result = {}
     for venue in venues:
@@ -81,17 +83,18 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # search for Hop should return "The Musical Hop".
-    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
+    """
+    implement case-insensitive search on venues with partial string search.
+    """
+    # import pdb
+    # pdb.set_trace()
+    query = request.form['search_term']
+    result = Venue.query.filter(Venue.name.ilike(
+        f"%{query}%")).options(load_only("name", "id")).all()
 
     response = {
-        "count": 1,
-        "data": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
+        "count": len(result),
+        "data": result
     }
     return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
 
