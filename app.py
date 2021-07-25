@@ -12,11 +12,10 @@ from flask import (abort, Flask, Response, flash, redirect, render_template, req
                    url_for)
 from flask_migrate import Migrate
 from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import load_only
 
 from forms import *
-from models import *
+from models import db, Venue, Artist
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -24,10 +23,10 @@ from models import *
 
 app = Flask(__name__)
 app.config.from_object('config')
-db = SQLAlchemy(app)
-
-migrate = Migrate(app, db)
 moment = Moment(app)
+
+db.init_app(app)
+migrate = Migrate(app, db, compare_type=True)
 
 
 #----------------------------------------------------------------------------#
