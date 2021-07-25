@@ -60,30 +60,22 @@ def index():
 
 @app.route('/venues')
 def venues():
-    # TODO: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [
-        {
-            "city": "San Francisco",
-            "state": "CA",
-            "venues": [{
-                "id": 1,
-                "name": "The Musical Hop",
-                "num_upcoming_shows": 0,
-            }, {
-                "id": 3,
-                "name": "Park Square Live Music & Coffee",
-                "num_upcoming_shows": 1,
-            }]
-        }, {
-            "city": "New York",
-            "state": "NY",
-            "venues": [{
-                "id": 2,
-                "name": "The Dueling Pianos Bar",
-                "num_upcoming_shows": 0,
-            }]
-        }]
+    venues = Venue.query.order_by("city").all()
+
+    result = {}
+    for venue in venues:
+        key = venue.city + ":" + venue.state
+        # TODO: implement upcoming shows count.
+        obj = {"id": venue.id, "name": venue.name, "num_upcoming_shows": 3}
+        if key in result:
+            result[key]["venues"].append(obj)
+        else:
+            result[key] = {
+                "city": venue.city,
+                "state": venue.state,
+                "venues": [obj]
+            }
+    data = result.values()
     return render_template('pages/venues.html', areas=data)
 
 
@@ -106,26 +98,7 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-    # shows the venue page with the given venue_id
-    # TODO: replace with real venue data from the venues table, using venue_id
-
-    # TODO: Add extra stats
-    # data3 = {
-    #     "past_shows": [{
-    #         "artist_id": 5,
-    #         "artist_name": "Matt Quevedo",
-    #         "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-    #         "start_time": "2019-06-15T23:00:00.000Z"
-    #     }],
-    #     "upcoming_shows": [{
-    #         "artist_id": 6,
-    #         "artist_name": "The Wild Sax Band",
-    #         "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    #         "start_time": "2035-04-01T20:00:00.000Z"
-    #     }],
-    #     "past_shows_count": 1,
-    #     "upcoming_shows_count": 1,
-    # }
+    # TODO: Add extra stats: past_shows, upcoming_shows,past_shows_count, upcoming_shows_count
 
     data = Venue.query.filter_by(id=venue_id).first()
     if not data:
