@@ -183,12 +183,12 @@ def edit_venue_submission(venue_id):
             flash("Venue successfully updated!")
         else:
             print("errors: ", form.errors)
-            flash("Form validation failed .Venue could not be created")
+            flash("Form validation failed .Venue could not be updated")
             return render_template('forms/new_venue.html', form=form)
     except():
         db.session.rollback()
         print(sys.exc_info())
-        flash('An error occurred. Venue could not be created.')
+        flash('An error occurred. Venue could not be updated.')
         return render_template('forms/new_venue.html', form=form)
     finally:
         db.session.close()
@@ -200,7 +200,6 @@ def edit_venue_submission(venue_id):
 
 @app.route('/artists')
 def artists():
-    # TODO: replace with real data returned from querying the database
     artists = Artist.query.options(load_only("name", "id")).all()
 
     return render_template('pages/artists.html', artists=artists)
@@ -244,28 +243,45 @@ def show_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-    form = ArtistForm()
-    artist = {
-        "id": 4,
-        "name": "Guns N Petals",
-        "genres": ["Rock n Roll"],
-        "city": "San Francisco",
-        "state": "CA",
-        "phone": "326-123-5000",
-        "website": "https://www.gunsnpetalsband.com",
-        "facebook_link": "https://www.facebook.com/GunsNPetals",
-        "seeking_venue": True,
-        "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-        "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-    }
-    # TODO: populate form with fields from artist with ID <artist_id>
+    try:
+        artist = Artist.query.filter_by(id=artist_id).first()
+        if not artist:
+            abort(404)
+        form = ArtistForm(obj=artist)
+        return render_template('forms/edit_artist.html', form=form, artist=artist)
+    except():
+        flash(f"Artist ({artist.id}) failed to fetch")
+    return None
+
     return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-    # TODO: take values from the form submitted, and update existing
-    # artist record with ID <artist_id> using the new attributes
+    form = ArtistForm(request.form)
+    try:
+        if form.validate():
+            form_data = form.data
+            del form_data['csrf_token']
+            artist = db.session.query(Artist).filter_by(id=artist_id)
+
+            if not artist.first():
+                abort(404)
+            artist.update(form_data)
+
+            db.session.commit()
+            flash("Artist successfully updated!")
+        else:
+            print("errors: ", form.errors)
+            flash("Form validation failed .Artist could not be updated")
+            return render_template('forms/new_artist.html', form=form)
+    except():
+        db.session.rollback()
+        print(sys.exc_info())
+        flash('An error occurred. artist could not be updated.')
+        return render_template('forms/new_artist.html', form=form)
+    finally:
+        db.session.close()
 
     return redirect(url_for('show_artist', artist_id=artist_id))
 
