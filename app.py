@@ -13,7 +13,7 @@ from flask_moment import Moment
 from sqlalchemy.orm import load_only
 
 from forms import *
-from models import db, Venue, Artist
+from models import db, Venue, Artist, Show
 from filters import format_datetime
 
 #----------------------------------------------------------------------------#
@@ -122,9 +122,9 @@ def create_venue_submission():
             flash("Venue was successfully created!")
         else:
             print("errors: ", form.errors)
-            flash("Form validation failed .Venue could not be created")
+            flash("Form validation failed. Venue could not be created")
             return render_template('forms/new_venue.html', form=form)
-    except():
+    except:
         db.session.rollback()
         print(sys.exc_info())
         flash('An error occurred. Venue could not be created.')
@@ -143,9 +143,9 @@ def delete_venue(venue_id):
         db.session.delete(venue)
         db.session.commit()
         flash(f"Venue ({venue.name}) deleted successfully ")
-    except():
+    except:
         db.session.rollback()
-        flash(f"Venue ({venue.name}) deletion failed ")
+        flash(f"Venue ({venue.name}) deletion failed")
     finally:
         db.session.close()
 
@@ -164,7 +164,7 @@ def edit_venue(venue_id):
             abort(404)
         form = VenueForm(obj=venue)
         return render_template('forms/edit_venue.html', form=form, venue=venue)
-    except():
+    except:
         flash(f"Venue ({venue.id}) failed to fetch")
     return None
 
@@ -188,7 +188,7 @@ def edit_venue_submission(venue_id):
             print("errors: ", form.errors)
             flash("Form validation failed .Venue could not be updated")
             return render_template('forms/new_venue.html', form=form)
-    except():
+    except:
         db.session.rollback()
         print(sys.exc_info())
         flash('An error occurred. Venue could not be updated.')
@@ -244,7 +244,7 @@ def show_artist(artist_id):
     artist["upcoming_shows"] = []
     return render_template('pages/show_artist.html', artist=artist)
 
-#  Update
+#  Update Artist
 #  ----------------------------------------------------------------
 
 
@@ -256,7 +256,7 @@ def edit_artist(artist_id):
             abort(404)
         form = ArtistForm(obj=artist)
         return render_template('forms/edit_artist.html', form=form, artist=artist)
-    except():
+    except:
         flash(f"Artist ({artist.id}) failed to fetch")
     return None
 
@@ -282,7 +282,7 @@ def edit_artist_submission(artist_id):
             print("errors: ", form.errors)
             flash("Form validation failed .Artist could not be updated")
             return render_template('forms/new_artist.html', form=form)
-    except():
+    except:
         db.session.rollback()
         print(sys.exc_info())
         flash('An error occurred. artist could not be updated.')
@@ -318,7 +318,7 @@ def create_artist_submission():
             print("errors: ", form.errors)
             flash("Form validation failed. Artist could not be created")
             return render_template('forms/new_artist.html', form=form)
-    except():
+    except:
         db.session.rollback()
         print(sys.exc_info())
         flash('An error occurred. Artist could not be created.')
@@ -375,6 +375,9 @@ def shows():
         }]
     return render_template('pages/shows.html', shows=data)
 
+#  Create Show
+#  ----------------------------------------------------------------
+
 
 @app.route('/shows/create')
 def create_shows():
@@ -385,14 +388,28 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-    # called to create new shows in the db, upon submitting new show listing form
-    # TODO: insert form data as a new Show record in the db, instead
+    form = ShowForm(request.form)
 
-    # on successful db insert, flash success
-    flash('Show was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Show could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    try:
+        if form.validate():
+            form_data = form.data
+            del form_data['csrf_token']
+            show = Show(**form_data)
+            db.session.add(show)
+            db.session.commit()
+            flash("Show was successfully created!")
+        else:
+            print("errors: ", form.errors)
+            flash("Form validation failed  Show could not be created")
+            return render_template('forms/new_show.html', form=form)
+    except:
+        db.session.rollback()
+        print(sys.exc_info())
+        flash('An error occurred. Venue could not be created.')
+        return render_template('forms/new_show.html', form=form)
+    finally:
+        db.session.close()
+
     return render_template('pages/home.html')
 
 
