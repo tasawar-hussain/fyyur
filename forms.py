@@ -66,12 +66,13 @@ class ArtistForm(FlaskForm):
     phone = StringField(
         'phone'
     )
-    image_link = StringField('image_link', validators=[URL()])
+    image_link = StringField('image_link', validators=[Optional(), URL()])
     genres = SelectMultipleField(
         'genres', validators=[DataRequired()],
         choices=genre_choices
     )
-    facebook_link = StringField('facebook_link', validators=[URL()])
-    website_link = StringField('website_link', validators=[URL()])
+    facebook_link = StringField(
+        'facebook_link', validators=[Optional(), URL()])
+    website_link = StringField('website_link', validators=[Optional(), URL()])
     seeking_venue = BooleanField('seeking_venue')
     seeking_description = StringField('seeking_description')
