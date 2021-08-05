@@ -44,4 +44,5 @@ class Artist(db.Model):
     seeking_venue = db.Column(db.Boolean(), default=False)
     seeking_description = db.Column(db.String(120))
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+    def __repr__(self):
+        return f'<Artist ID: {self.id}, name: {self.name}>'
