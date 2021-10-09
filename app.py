@@ -1,12 +1,11 @@
 #----------------------------------------------------------------------------#
 # Imports
 #----------------------------------------------------------------------------#
-import json
 import logging
 import sys
 from logging import FileHandler, Formatter
 
-from flask import (abort, Flask, Response, flash, redirect, render_template, request,
+from flask import (abort, Flask, flash, redirect, render_template, request,
                    url_for)
 from flask_migrate import Migrate
 from flask_moment import Moment
@@ -44,14 +43,17 @@ def index():
 
 @app.route('/venues')
 def venues():
-    venues = Venue.query.order_by("city").options(
+    venues = Venue.query.distinct(Venue.city, Venue.state).order_by("city").options(
         load_only("name", "id", "city", "state")).all()
 
     result = {}
     for venue in venues:
         key = venue.city + ":" + venue.state
-        # TODO: implement upcoming shows count.
-        obj = {"id": venue.id, "name": venue.name, "num_upcoming_shows": 3}
+        num_upcoming_shows = Show.query.filter_by(venue_id=venue.id).filter(
+            Show.start_time > datetime.now()).count()
+
+        obj = {"id": venue.id, "name": venue.name,
+               "num_upcoming_shows": num_upcoming_shows}
         if key in result:
             result[key]["venues"].append(obj)
         else:
@@ -85,17 +87,33 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-    # TODO: Add extra stats: past_shows, upcoming_shows,past_shows_count, upcoming_shows_count
-
     data = Venue.query.filter_by(id=venue_id).first()
     if not data:
         abort(404)
 
+    shows = Show.query.filter_by(venue_id=venue_id).join(Artist).all()
+    current_time = datetime.now()
+    past_shows = []
+    upcoming_shows = []
+    for show in shows:
+        artist = show.artist
+        show_data = {
+            "artist_name": artist.name,
+            "artist_image_link": artist.image_link,
+            "artist_id": show.artist_id,
+            "start_time": format_datetime(str(show.start_time))
+        }
+    if show.start_time > current_time:
+        upcoming_shows.append(show_data)
+    else:
+        past_shows.append(show_data)
+
     venue = data.__dict__
-    venue["past_shows_count"] = 1
-    venue["upcoming_shows_count"] = 1
-    venue["past_shows"] = []
-    venue["upcoming_shows"] = []
+
+    venue["past_shows_count"] = len(past_shows)
+    venue["upcoming_shows_count"] = len(upcoming_shows)
+    venue["past_shows"] = past_shows
+    venue["upcoming_shows"] = upcoming_shows
 
     return render_template('pages/show_venue.html', venue=venue)
 
@@ -239,17 +257,33 @@ def search_artists():
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
     # shows the artist page with the given artist_id
-    # TODO: replace with real artist data from the artist table, using artist_id
 
     data = Artist.query.filter_by(id=artist_id).first()
     if not data:
         abort(404)
 
+    shows = Show.query.filter_by(artist_id=artist_id).join(Venue).all()
+    current_time = datetime.now()
+    past_shows = []
+    upcoming_shows = []
+    for show in shows:
+        venue = show.venue
+        show_data = {
+            "venue_id": venue.id,
+            "venue_name": venue.name,
+            "venue_image_link": venue.image_link,
+            "start_time": format_datetime(str(show.start_time))
+        }
+        if show.start_time > current_time:
+            upcoming_shows.append(show_data)
+        else:
+            past_shows.append(show_data)
+
     artist = data.__dict__
-    artist["past_shows_count"] = 3
-    artist["upcoming_shows_count"] = 5
-    artist["past_shows"] = []
-    artist["upcoming_shows"] = []
+    artist["past_shows_count"] = len(past_shows)
+    artist["upcoming_shows_count"] = len(upcoming_shows)
+    artist["past_shows"] = past_shows
+    artist["upcoming_shows"] = upcoming_shows
     return render_template('pages/show_artist.html', artist=artist)
 
 #  Update Artist
@@ -341,8 +375,6 @@ def create_artist_submission():
 @app.route('/shows')
 def shows():
     # displays list of shows at /shows
-    # TODO: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
 
     result = db.session.query(
         Show.id,

@@ -40,7 +40,6 @@ class VenueForm(FlaskForm):
         'phone'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
         'genres', validators=[DataRequired()],
         choices=genre_choices
     )
