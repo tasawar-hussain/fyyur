@@ -72,7 +72,7 @@ def search_venues():
     """
     implement case-insensitive search on venues with partial string search.
     """
-    query = request.form['search_term']
+    query = request.form.get('search_term', '')
     result = Venue.query.filter(Venue.name.ilike(
         f"%{query}%")).options(load_only("name", "id")).all()
 
@@ -80,7 +80,7 @@ def search_venues():
         "count": len(result),
         "data": result
     }
-    return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+    return render_template('pages/search_venues.html', results=response, search_term=query)
 
 
 @app.route('/venues/<int:venue_id>')
@@ -140,10 +140,18 @@ def delete_venue(venue_id):
         venue = Venue.query.filter_by(id=venue_id).first()
         if not venue:
             abort(404)
+        shows_count = Show.query.filter_by(venue_id=venue_id).count()
+        # import pdb
+        # pdb.set_trace()
+        if(shows_count > 1):
+            flash(
+                f"Venue ({venue.name}) can't be deleted, {shows_count} shows linked")
+            return redirect(url_for('show_venue', venue_id=venue_id))
         db.session.delete(venue)
         db.session.commit()
         flash(f"Venue ({venue.name}) deleted successfully ")
-    except:
+    except Exception as ex:
+        print(str(ex))
         db.session.rollback()
         flash(f"Venue ({venue.name}) deletion failed")
     finally:
@@ -258,7 +266,6 @@ def edit_artist(artist_id):
         return render_template('forms/edit_artist.html', form=form, artist=artist)
     except:
         flash(f"Artist ({artist.id}) failed to fetch")
-    return None
 
     return render_template('forms/edit_artist.html', form=form, artist=artist)
 
@@ -345,7 +352,7 @@ def shows():
         Artist.id.label('artist_id'),
         Artist.name.label('artist_name'),
         Artist.image_link.label('artist_image_link')
-    ).join(Venue).join(Artist).all()
+    ).join(Venue).join(Artist).order_by(db.desc(Show.start_time)).all()
 
     data = [r._asdict() for r in result]
     for d in data:
